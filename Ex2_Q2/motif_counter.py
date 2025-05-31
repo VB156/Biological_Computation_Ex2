@@ -232,28 +232,149 @@ def print_formatted_output(motif_size, motif_counts):
     
 
 
+
+"""
+------------------------------------------------------------------------------------------------
+Function: validate_motif_size
+
+This function validates the motif size input.
+
+Input: 
+    int motif_size - size of the motifs (number of vertices)
+
+Output: 
+    bool is_valid - True if the motif size is valid, else False
+    string error_message - Error message if invalid
+------------------------------------------------------------------------------------------------
+"""
+def validate_motif_size(motif_size):
+    if isinstance(motif_size, str):
+        try:
+            motif_size = int(motif_size)
+        except ValueError:
+            return False, "Motif size must be a number"
+    
+    # Check if it's an integer
+    if not isinstance(motif_size, int):
+        return False, "Motif size must be an integer"
+    
+    # Check if it's positive
+    if motif_size <= 0:
+        return False, "Motif size must be a positive number"
+    
+    return True, ""
+
+
+
+"""
+------------------------------------------------------------------------------------------------
+Function: validate_graph_file
+
+This function validates the graph file.
+
+Input: 
+    string file_path - path to the file containing the graph
+
+Output: 
+    bool is_valid - True if the file is valid, else False
+    string error_message - Error message if invalid
+------------------------------------------------------------------------------------------------
+"""
+def validate_graph_file(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            # Check if file is empty
+            if not file.read(1):
+                return False, "Graph file is empty"
+            file.seek(0)
+            
+            # Check format of each line
+            for line_num, line in enumerate(file, 1):
+                parts = line.strip().split()
+                if len(parts) != 2:
+                    return False, f"Invalid format at line {line_num}: {line.strip()}"
+                try:
+                    v1, v2 = map(int, parts)
+                    if v1 <= 0 or v2 <= 0:
+                        return False, f"Invalid vertex numbers at line {line_num}: vertices must be positive integers"
+                except ValueError:
+                    return False, f"Invalid vertex numbers at line {line_num}: {line.strip()}"
+        return True, ""
+    
+    except FileNotFoundError:
+        return False, f"File not found: {file_path}"
+    
+    except Exception as e:
+        return False, f"Error reading file: {str(e)}"
     
 
+
+"""
+------------------------------------------------------------------------------------------------
+Function: validate_graph_size
+
+This function validates if the graph size is appropriate for the motif size.
+
+Input: 
+    DiGraph dir_graph - graph to validate
+    int motif_size - size of the motifs
+
+Output: 
+    bool is_valid - True if the graph size is valid, else False
+    string error_message - Error message if invalid
+------------------------------------------------------------------------------------------------
+"""
+def validate_graph_size(dir_graph, motif_size):
+    num_vertices = len(dir_graph.nodes())
+    if num_vertices < motif_size:
+        return False, f"Graph has only {num_vertices} vertices, which is less than the motif size {motif_size}"
+    return True, ""
+
 def main():
-    # Input from user
-    motif_size = int(input("Enter n (size of the motifs): "))
-    graph_file = input("Enter your graph file path: ")
-    
-    # Proccess graph from given file
-    dir_graph = read_graph(graph_file)
-    
-    # Get all possible motifs of size n
-    all_possible_motifs = find_all_possible_motifs(motif_size)
-    
-    # Get all subgraphs of size n
-    subgraphs = find_all_subgraphs(dir_graph, motif_size)
-    
-    # Count motifs in subgraphs
-    motif_counts = count_motifs(subgraphs, all_possible_motifs)
-    
-    # Print output
-    output = print_formatted_output(motif_size, motif_counts)
-    print(output)
+    try:
+        # Input from user
+        motif_size = input("Enter n: ")
+        
+        # Validate motif size
+        is_valid, error_msg = validate_motif_size(motif_size)
+        if not is_valid:
+            print(f"Error: {error_msg}")
+            return
+            
+        graph_file = input("Enter your graph file path: ")
+        
+        # Validate graph file
+        is_valid, error_msg = validate_graph_file(graph_file)
+        if not is_valid:
+            print(f"Error: {error_msg}")
+            return
+        
+        # Process graph from given file
+        dir_graph = read_graph(graph_file)
+        
+        # Validate graph size
+        is_valid, error_msg = validate_graph_size(dir_graph, motif_size)
+        if not is_valid:
+            print(f"Error: {error_msg}")
+            return
+        
+        # Get all possible motifs of size n
+        all_possible_motifs = find_all_possible_motifs(motif_size)
+        
+        # Get all subgraphs of size n
+        subgraphs = find_all_subgraphs(dir_graph, motif_size)
+        
+        # Count motifs
+        motif_counts = count_motifs(subgraphs, all_possible_motifs)
+        
+        # Print formatted output
+        output = print_formatted_output(motif_size, motif_counts)
+        print(output)
+        
+    except ValueError as e:
+        print(f"Error: Invalid input - {str(e)}")
+    except Exception as e:
+        print(f"Error: An unexpected error occurred - {str(e)}")
 
 if __name__ == "__main__":
     main()
